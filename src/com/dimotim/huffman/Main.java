@@ -6,21 +6,21 @@ import java.util.Arrays;
 
 import static com.dimotim.huffman.Constants.*;
 
-class Constants {
+final class Constants {
     static final byte[] masks = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
     enum Bit {ZERO, ONE}
 }
 
-class BitInputStream implements AutoCloseable {
+final class BitInputStream implements AutoCloseable {
     private int ind = 8;
     private byte buf;
     private final InputStream is;
 
-    BitInputStream(InputStream is) {
+    public BitInputStream(InputStream is) {
         this.is = is;
     }
 
-    Bit readBit() throws IOException {
+    public Bit readBit() throws IOException {
         if (ind > 7) {
             ind = 0;
             int next = is.read();
@@ -30,7 +30,7 @@ class BitInputStream implements AutoCloseable {
         return (masks[ind++] & buf) == 0 ? Bit.ZERO : Bit.ONE;
     }
 
-    byte readByte() throws IOException {
+    public byte readByte() throws IOException {
         byte res = 0;
         for (int i = 0; i < 8; i++) {
             res <<= 1;
@@ -45,16 +45,16 @@ class BitInputStream implements AutoCloseable {
     }
 }
 
-class BitOutputStream implements AutoCloseable {
+final class BitOutputStream implements AutoCloseable {
     private int ind = 0;
     private byte buf = 0;
     private final OutputStream os;
 
-    BitOutputStream(OutputStream os) {
+    public BitOutputStream(OutputStream os) {
         this.os = os;
     }
 
-    void writeBit(Bit bit) throws IOException {
+    public void writeBit(Bit bit) throws IOException {
         if (ind > 7) {
             ind = 0;
             os.write(buf);
@@ -63,7 +63,7 @@ class BitOutputStream implements AutoCloseable {
         buf |= (bit.ordinal() << (ind++));
     }
 
-    void writeByte(byte b) throws IOException {
+    public void writeByte(byte b) throws IOException {
         for (int i = 7; i >= 0; i--) {
             Bit bit = ((b & masks[i]) == 0) ? Bit.ZERO : Bit.ONE;
             writeBit(bit);
@@ -77,7 +77,7 @@ class BitOutputStream implements AutoCloseable {
     }
 }
 
-class Node {
+final class Node {
     private final byte symbol;
     private long weight;
     private Node parent;
