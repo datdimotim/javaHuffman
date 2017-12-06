@@ -1,12 +1,13 @@
 package com.dimotim.huffman;
 
 import java.io.*;
+import java.util.Arrays;
+
 
 import static com.dimotim.huffman.Constants.*;
 
 class Constants {
     static final byte[] masks = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
-
     enum Bit {ZERO, ONE}
 }
 
@@ -85,7 +86,7 @@ class Node {
     private Node next;
     private Node back;
 
-    Node(byte symbol, long weight, Node parent, Node left, Node right) {
+    private Node(byte symbol, long weight, Node parent, Node left, Node right) {
         this.symbol = symbol;
         this.weight = weight;
         this.parent = parent;
@@ -173,6 +174,13 @@ class Node {
         return len;
     }
 
+    private static void symbolToCodeStream(Node s,BitOutputStream os) throws IOException {
+        if(s.parent==null)return;
+        symbolToCodeStream(s.parent,os);
+        if(isLeft(s))os.writeBit(Bit.ZERO);
+        else os.writeBit(Bit.ONE);
+    }
+
     private static Node initESC() {
         return new Node((byte) 0, 0, null, null, null);
     }
@@ -181,6 +189,7 @@ class Node {
         if (in.available() == 0) throw new EOFException();
         BitOutputStream code = new BitOutputStream(codeStd);
         Node[] symbols = new Node[256];
+        byte[] bits = new byte[256];
         Node esc = initESC();
 
         final byte firstbyte = (byte) in.read();
@@ -190,20 +199,17 @@ class Node {
         while (in.available() != 0) {
             byte current = (byte) in.read();
             if (symbols[128+current] == null) {
-                byte[] bits = new byte[256];
                 int len = bitCode(bits, esc);
                 for (int i = 0; i < len; i++) code.writeBit(bits[i] == 0 ? Bit.ZERO : Bit.ONE);
                 symbols[128+current] = splitESCSymbol(esc, current);
                 code.writeByte(current);
             } else {
-                byte[] bits = new byte[256];
                 int len = bitCode(bits, symbols[128+current]);
                 for (int i = 0; i < len; i++) code.writeBit(bits[i] == 0 ? Bit.ZERO : Bit.ONE);
                 incrementWeight(symbols[128+current]);
             }
         }
 
-        byte[] bits = new byte[256];
         int len = bitCode(bits, esc);
         for (int i = 0; i < len; i++) code.writeBit(bits[i] == 0 ? Bit.ZERO : Bit.ONE);
         code.writeByte(firstbyte);
@@ -256,18 +262,57 @@ class Node {
     }
 }
 
-
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        Node.encode(
-                new BufferedInputStream(new FileInputStream("/home/dimotim/Рабочий стол/vim 3M")),
-                new BufferedOutputStream(new FileOutputStream("/home/dimotim/Рабочий стол/coded"))
-        );
+        test(new FileInputStream("/home/dimotim/Рабочий стол/vim 30M"));
+    }
 
-        Node.decode(
-                new BufferedInputStream(new FileInputStream("/home/dimotim/Рабочий стол/coded")),
-                new BufferedOutputStream(new FileOutputStream("/home/dimotim/Рабочий стол/encoded"))
-        );
+    public static void test(InputStream file) throws IOException {
+        byte[] fileBytes=file.readAllBytes();
+        ByteArrayOutputStream encoded=new ByteArrayOutputStream();
+        ByteArrayInputStream inputFile=new ByteArrayInputStream(fileBytes);
+        ByteArrayOutputStream decoded=new ByteArrayOutputStream();
+
+        while (true) {
+            encoded.reset();
+            inputFile.reset();
+            decoded.reset();
+            long encStart=System.currentTimeMillis();
+            Node.encode(inputFile, encoded);
+            System.out.println("endode time="+(System.currentTimeMillis()-encStart)+"ms");
+            ByteArrayInputStream inputCode = new ByteArrayInputStream(encoded.toByteArray());
+            long decStart=System.currentTimeMillis();
+            Node.decode(inputCode, decoded);
+            System.out.println("decode time="+(System.currentTimeMillis()-decStart)+"ms");
+            if (!Arrays.equals(fileBytes, decoded.toByteArray())) throw new RuntimeException("unmatch!");
+        }
+    }
+
+    public static void testEncode() throws Exception {
+        String input="/home/dimotim/Рабочий стол/vim 30M";
+        FileInputStream fis=new FileInputStream(input);
+        byte[] buf=fis.readAllBytes();
+        fis.close();
+
+        InputStream is=new ByteArrayInputStream(buf);
+        OutputStream os=new ByteArrayOutputStream(1000*1000*100);
+
+        long st=System.currentTimeMillis();
+        Node.encode(is,os);
+        System.out.println("encoded "+(System.currentTimeMillis()-st)+"ms");
+
+    }
+    public static void testDecode() throws Exception {
+        String input="/home/dimotim/Рабочий стол/vim 30M.coded";
+        FileInputStream fis=new FileInputStream(input);
+        byte[] buf=fis.readAllBytes();
+
+        InputStream is=new ByteArrayInputStream(buf);
+        OutputStream os=new ByteArrayOutputStream(1000*1000*100);
+
+        long st=System.currentTimeMillis();
+        Node.decode(is,os);
+        System.out.println("decoded "+(System.currentTimeMillis()-st)+"ms");
     }
 }
