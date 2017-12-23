@@ -1,99 +1,16 @@
 package com.dimotim.huffman;
 
-import java.io.*;
-import java.util.Arrays;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import stream.SimpleBitInputStream;
+import stream.SimpleBitOutputStream;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-import static com.dimotim.huffman.Constants.*;
-
-final class Constants {
-    static final byte[] masks = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
-    enum Bit {ZERO, ONE}
-}
-
-final class BitInputStream implements AutoCloseable {
-    private int ind = 8;
-    private byte buf;
-    private final InputStream is;
-
-    public BitInputStream(InputStream is) {
-        this.is = is;
-    }
-
-    public Bit readBit() throws IOException {
-        if (ind > 7) {
-            ind = 0;
-            int next = is.read();
-            if (next == -1) throw new EOFException();
-            buf = (byte) next;
-        }
-        return (masks[ind++] & buf) == 0 ? Bit.ZERO : Bit.ONE;
-    }
-
-    public byte readByte() throws IOException {
-        byte res = 0;
-        for (int i = 0; i < 8; i++) {
-            res <<= 1;
-            res |= readBit().ordinal();
-        }
-        return res;
-    }
-
-    @Override
-    public void close() throws IOException {
-        is.close();
-    }
-}
-
-final class BitOutputStream implements AutoCloseable {
-    private int ind = 0;
-    private byte buf = 0;
-    private final OutputStream os;
-
-    public BitOutputStream(OutputStream os) {
-        this.os = os;
-    }
-
-    public void writeBit(Bit bit) throws IOException {
-        if (ind > 7) {
-            ind = 0;
-            os.write(buf);
-            buf = 0;
-        }
-        buf |= (bit.ordinal() << (ind++));
-    }
-
-    public void writeByte(byte b) throws IOException {
-        for (int i = 7; i >= 0; i--) {
-            Bit bit = ((b & masks[i]) == 0) ? Bit.ZERO : Bit.ONE;
-            writeBit(bit);
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-        if (ind != 0) os.write(buf);
-        os.close();
-    }
-}
-
-final class Node {
-    private final byte symbol;
-    private long weight;
-    private Node parent;
-    private Node left;
-    private Node right;
-    private Node next;
-    private Node back;
-
-    private Node(byte symbol, long weight, Node parent, Node left, Node right) {
-        this.symbol = symbol;
-        this.weight = weight;
-        this.parent = parent;
-        this.left = left;
-        this.right = right;
-    }
-
+public class AdaptiveHuffmanAlgorithm {
+    @Contract(pure = true)
     private static boolean isLeft(Node node) {
         return node == node.parent.left;
     }
@@ -160,20 +77,21 @@ final class Node {
         return root.right;
     }
 
-    private static void symbolToCodeStream(Node s,BitOutputStream os) throws IOException {
+    private static void symbolToCodeStream(Node s, BitOutputStream os) throws IOException {
         if(s.parent==null)return;
         symbolToCodeStream(s.parent,os);
-        if(isLeft(s))os.writeBit(Bit.ZERO);
-        else os.writeBit(Bit.ONE);
+        if(isLeft(s))os.writeBit(Constants.Bit.ZERO);
+        else os.writeBit(Constants.Bit.ONE);
     }
 
+    @NotNull
     private static Node initESC() {
         return new Node((byte) 0, 0, null, null, null);
     }
 
-    public static void encode(InputStream in, OutputStream codeStd) throws IOException {
+    public static void encode(InputStream in, OutputStream codeStd) throws Exception {
         if (in.available() == 0) return;
-        BitOutputStream code = new BitOutputStream(codeStd);
+        BitOutputStream code = new SimpleBitOutputStream(codeStd);
         Node[] symbols = new Node[256];
         Node esc = initESC();
 
@@ -195,7 +113,6 @@ final class Node {
 
         symbolToCodeStream(esc,code);
         code.writeByte(firstbyte);
-
         code.close();
         codeStd.flush();
     }
@@ -211,7 +128,7 @@ final class Node {
 
     public static void decode(InputStream inStd, OutputStream code) throws IOException {
         if(inStd.available()==0)return;
-        BitInputStream in = new BitInputStream(inStd);
+        BitInputStream in = new SimpleBitInputStream(inStd);
         boolean[] symbols = new boolean[256];
         Node esc = initESC();
 
@@ -236,32 +153,23 @@ final class Node {
         }
         code.flush();
     }
-}
 
-public class Main {
+    private static final class Node {
+        final byte symbol;
+        long weight;
+        Node parent;
+        Node left;
+        Node right;
+        Node next;
+        Node back;
 
-    public static void main(String[] args) throws Exception {
-        test(new FileInputStream("/home/dimotim/Рабочий стол/vim 30M"));
-    }
-
-    public static void test(InputStream file) throws IOException {
-        byte[] fileBytes=file.readAllBytes();
-        ByteArrayOutputStream encoded=new ByteArrayOutputStream();
-        ByteArrayInputStream inputFile=new ByteArrayInputStream(fileBytes);
-        ByteArrayOutputStream decoded=new ByteArrayOutputStream();
-
-        while (true) {
-            encoded.reset();
-            inputFile.reset();
-            decoded.reset();
-            long encStart=System.currentTimeMillis();
-            Node.encode(inputFile, encoded);
-            System.out.println("endode time="+(System.currentTimeMillis()-encStart)+"ms");
-            ByteArrayInputStream inputCode = new ByteArrayInputStream(encoded.toByteArray());
-            long decStart=System.currentTimeMillis();
-            Node.decode(inputCode, decoded);
-            System.out.println("decode time="+(System.currentTimeMillis()-decStart)+"ms");
-            if (!Arrays.equals(fileBytes, decoded.toByteArray())) throw new RuntimeException("unmatch!");
+        Node(byte symbol, long weight, Node parent, Node left, Node right) {
+            this.symbol = symbol;
+            this.weight = weight;
+            this.parent = parent;
+            this.left = left;
+            this.right = right;
         }
     }
 }
+
