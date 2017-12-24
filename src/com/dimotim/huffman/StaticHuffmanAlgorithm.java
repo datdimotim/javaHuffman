@@ -31,6 +31,7 @@ public class StaticHuffmanAlgorithm {
         writeStat(new DataOutputStream(codeStd),stat);
         Node tree=getTree(stat);
         BitCode[] codes=getCodes(tree);
+
         in.reset();
         BitOutputStream codeStream = new SimpleBitOutputStream(codeStd);
 
@@ -39,7 +40,7 @@ public class StaticHuffmanAlgorithm {
         codeStream.close();
     }
 
-    static byte symbolByBitStream(BitInputStream bis, Node root) throws IOException {
+    private static byte symbolByBitStream(BitInputStream bis, Node root) throws IOException {
         if(bis.readBit()==Bit.ZERO){
             if(root.left.left==null)return root.left.symbol;
             else return symbolByBitStream(bis, root.left);
@@ -50,17 +51,17 @@ public class StaticHuffmanAlgorithm {
         }
     }
 
-    static int numberOfSymbols(int[] stat){
+    private static int numberOfSymbols(int[] stat){
         int r=0;
         for(int c:stat)r+=c;
         return r;
     }
 
-    static void writeCode(BitOutputStream bs, BitCode code) throws IOException {
+    private static void writeCode(BitOutputStream bs, BitCode code) throws IOException {
         for(Bit b:code.code)bs.writeBit(b);
     }
 
-    static void getCodesHelper(Node t, Bit[] code, int deep, BitCode[] codes){
+    private static void getCodesHelper(Node t, Bit[] code, int deep, BitCode[] codes){
         if(t.left!=null){
             code[deep]=Bit.ZERO;
             getCodesHelper(t.left,code,deep+1,codes);
@@ -75,13 +76,13 @@ public class StaticHuffmanAlgorithm {
         getCodesHelper(t.right,code,deep+1,codes);
     }
 
-    static BitCode[] getCodes(Node tree){
+    private static BitCode[] getCodes(Node tree){
         BitCode[] codes=new BitCode[256];
         getCodesHelper(tree,new Bit[256],0,codes);
         return codes;
     }
 
-    static void writeStat(DataOutputStream dos, int[] stat) throws IOException {
+    private static void writeStat(DataOutputStream dos, int[] stat) throws IOException {
         int count=0;
         for(int v:stat)if(v!=0)count++;
         dos.writeInt(count);
@@ -91,7 +92,7 @@ public class StaticHuffmanAlgorithm {
             dos.writeInt(stat[i]);
         }
     }
-    static int[] readStat(DataInputStream dis) throws IOException {
+    private static int[] readStat(DataInputStream dis) throws IOException {
         int[] stat=new int[256];
         int count=dis.readInt();
         for(int i=0;i<count;i++){
@@ -100,13 +101,13 @@ public class StaticHuffmanAlgorithm {
         }
         return stat;
     }
-    static int[] getStat(InputStream in) throws IOException {
+    private static int[] getStat(InputStream in) throws IOException {
         int[] stat=new int[256];
         while (in.available()!=0)stat[+in.read()]++;
         return stat;
     }
 
-    static Node getTree(int[] stat){
+    private static Node getTree(int[] stat){
         PriorityQueue<Node> pq=new PriorityQueue<>(256,Node[]::new);
         for(int i=0;i<stat.length;i++)if(stat[i]>0) pq.push(new Node((byte) i,stat[i]));
         while (pq.size()!=1)pq.push(new Node(pq.pop(),pq.pop()));

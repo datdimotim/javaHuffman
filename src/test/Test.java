@@ -10,9 +10,23 @@ import java.util.Random;
 
 public class Test {
     public static void main(String[] args) throws Exception {
-        test();
+        for(File f:new File("tests").listFiles()) {
+            System.out.println("file "+f.getName()+"  ");
+            compareLength("tests/"+f.getName());
+            System.out.println();
+        }
+        //test();
         //benchmarkStatic();
-        benchmarkAdaptive();
+        //benchmarkAdaptive();
+    }
+    public static void compareLength(String name) throws Exception {
+        ByteArrayOutputStream baos=new ByteArrayOutputStream();
+        StaticHuffmanAlgorithm.encode(new FileInputStream(name),baos);
+        System.out.println("static "+baos.toByteArray().length);//18262224
+
+        baos.reset();
+        AdaptiveHuffmanAlgorithm.encode(new ByteArrayInputStream(new FileInputStream(name).readAllBytes()),baos);
+        System.out.println("adaptive "+baos.toByteArray().length);
     }
     public static void test() throws Exception {
         System.out.println("static");
@@ -28,7 +42,7 @@ public class Test {
         benchmark(new FileInputStream("tests/vim 30M"),AdaptiveHuffmanAlgorithm::encode,AdaptiveHuffmanAlgorithm::decode);
     }
 
-    static void testSet(Encoder encoder, Decoder decoder, File... files) throws Exception {
+    public static void testSet(Encoder encoder, Decoder decoder, File... files) throws Exception {
         for(File fileName:files) {
             FileInputStream file=new FileInputStream(fileName);
             byte[] fileBytes = file.readAllBytes();
