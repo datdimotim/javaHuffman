@@ -9,18 +9,42 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class Test {
-
-
-
     public static void main(String[] args) throws Exception {
-        //testPriorityQueue();
-        testStatic();
-
-        ByteArrayOutputStream bos=new ByteArrayOutputStream();
-        AdaptiveHuffmanAlgorithm.encode(new FileInputStream("vim 30M"),bos);
-        System.out.println("dynamic code lenght= "+bos.toByteArray().length);
+        test();
+        //benchmarkStatic();
+        benchmarkAdaptive();
+    }
+    public static void test() throws Exception {
+        System.out.println("static");
+        testSet(StaticHuffmanAlgorithm::encode,StaticHuffmanAlgorithm::decode,new File("tests").listFiles());
+        System.out.println("\nadaptive:");
+        testSet(AdaptiveHuffmanAlgorithm::encode,AdaptiveHuffmanAlgorithm::decode,new File("tests").listFiles());
+        System.out.println();
+    }
+    public static void benchmarkStatic() throws Exception {
+        benchmark(new FileInputStream("tests/vim 30M"),StaticHuffmanAlgorithm::encode,StaticHuffmanAlgorithm::decode);
+    }
+    public static void benchmarkAdaptive() throws Exception {
+        benchmark(new FileInputStream("tests/vim 30M"),AdaptiveHuffmanAlgorithm::encode,AdaptiveHuffmanAlgorithm::decode);
     }
 
+    static void testSet(Encoder encoder, Decoder decoder, File... files) throws Exception {
+        for(File fileName:files) {
+            FileInputStream file=new FileInputStream(fileName);
+            byte[] fileBytes = file.readAllBytes();
+            file.close();
+
+            ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+            ByteArrayInputStream inputFile = new ByteArrayInputStream(fileBytes);
+            ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+
+            encoder.encode(inputFile, encoded);
+            ByteArrayInputStream inputCode = new ByteArrayInputStream(encoded.toByteArray());
+            decoder.decode(inputCode, decoded);
+            if (!Arrays.equals(fileBytes, decoded.toByteArray())) throw new RuntimeException("file: "+fileName+" unmatch!");
+            else System.out.println("file: "+fileName+" ok");
+        }
+    }
     public static void testPriorityQueue(){
         Random r=new Random();
         int[] m=new int[10];
@@ -33,29 +57,16 @@ public class Test {
         while (0!=pq.size()){
             Integer cur=pq.pop();
             System.out.println("prior="+cur);
-            //if(cur.priority==prev.priority&&cur.elem>prev.elem)throw new RuntimeException();
-            prev=cur;
         }
     }
 
-    public static void testStatic() throws Exception {
-        byte[] save=new FileInputStream("vim 30M").readAllBytes();
-        ByteArrayInputStream inputMesg=new ByteArrayInputStream(save);
-        ByteArrayOutputStream outputCode=new ByteArrayOutputStream();
-        StaticHuffmanAlgorithm.encode(inputMesg,outputCode);
-
-        ByteArrayInputStream inputCode=new ByteArrayInputStream(outputCode.toByteArray());
-        ByteArrayOutputStream outputMesg=new ByteArrayOutputStream();
-        StaticHuffmanAlgorithm.decode(inputCode,outputMesg);
-
-        //System.out.println(Arrays.toString(save));
-        //System.out.println(Arrays.toString(outputMesg.toByteArray()));
-        System.out.println(Arrays.equals(save,outputMesg.toByteArray()));
-        System.out.println("input lenght= "+save.length);
-        System.out.println("encoded lenght= "+outputCode.toByteArray().length);
+    public interface Encoder{
+        void encode(InputStream in, OutputStream out)throws Exception;
     }
-
-    public static void testAdaptive(InputStream file) throws Exception {
+    public interface Decoder{
+        void decode(InputStream in, OutputStream out)throws IOException;
+    }
+    public static void benchmark(InputStream file, Encoder encoder, Decoder decoder) throws Exception {
         byte[] fileBytes=file.readAllBytes();
         ByteArrayOutputStream encoded=new ByteArrayOutputStream();
         ByteArrayInputStream inputFile=new ByteArrayInputStream(fileBytes);
@@ -66,11 +77,11 @@ public class Test {
             inputFile.reset();
             decoded.reset();
             long encStart=System.currentTimeMillis();
-            AdaptiveHuffmanAlgorithm.encode(inputFile, encoded);
+            encoder.encode(inputFile, encoded);
             System.out.println("endode time="+(System.currentTimeMillis()-encStart)+"ms");
             ByteArrayInputStream inputCode = new ByteArrayInputStream(encoded.toByteArray());
             long decStart=System.currentTimeMillis();
-            AdaptiveHuffmanAlgorithm.decode(inputCode, decoded);
+            decoder.decode(inputCode, decoded);
             System.out.println("decode time="+(System.currentTimeMillis()-decStart)+"ms");
             if (!Arrays.equals(fileBytes, decoded.toByteArray())) throw new RuntimeException("unmatch!");
         }

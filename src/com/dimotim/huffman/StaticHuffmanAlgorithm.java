@@ -11,24 +11,31 @@ import static com.dimotim.huffman.Constants.Bit;
 
 public class StaticHuffmanAlgorithm {
     public static void decode(InputStream inStd, OutputStream code) throws IOException {
+        if(inStd.available()==0)return;
         int[] stat=readStat(new DataInputStream(inStd));
         Node tree=getTree(stat);
         BitInputStream bis=new SimpleBitInputStream(inStd);
         int count=numberOfSymbols(stat);
 
-        for(int i=0;i<count;i++)code.write(symbolByBitStream(bis,tree));
+        if(tree.left==null){
+            for (int i=0;i<count;i++)code.write(tree.symbol);
+        }
+        else for(int i=0;i<count;i++)code.write(symbolByBitStream(bis,tree));
         code.close();
     }
     public static void encode(InputStream in, OutputStream codeStd) throws Exception {
+        if(in.available()==0)return;
         in=new ByteArrayInputStream(in.readAllBytes());
 
         int[] stat=getStat(in);
         writeStat(new DataOutputStream(codeStd),stat);
-        BitCode[] codes=getCodes(getTree(stat));
+        Node tree=getTree(stat);
+        BitCode[] codes=getCodes(tree);
         in.reset();
-
         BitOutputStream codeStream = new SimpleBitOutputStream(codeStd);
-        while (0!=in.available())writeCode(codeStream,codes[in.read()]);
+
+        // сообщения из 1 различного символа не записываются
+        if(tree.left!=null) while (0!=in.available())writeCode(codeStream,codes[in.read()]);
         codeStream.close();
     }
 
