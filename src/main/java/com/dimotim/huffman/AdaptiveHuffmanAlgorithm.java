@@ -1,16 +1,14 @@
 package com.dimotim.huffman;
 
-import org.jetbrains.annotations.Contract;
+import com.dimotim.bitstream.SimpleBitInputStream;
+import com.dimotim.bitstream.SimpleBitOutputStream;
 import org.jetbrains.annotations.NotNull;
-import stream.SimpleBitInputStream;
-import stream.SimpleBitOutputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 public class AdaptiveHuffmanAlgorithm {
-    @Contract(pure = true)
     private static boolean isLeft(Node node) {
         return node == node.parent.left;
     }

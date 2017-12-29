@@ -1,8 +1,9 @@
 package com.dimotim.huffman;
 
+import com.dimotim.java8Compability.InputStreamReadAllBytes;
 import org.jetbrains.annotations.NotNull;
-import stream.SimpleBitInputStream;
-import stream.SimpleBitOutputStream;
+import com.dimotim.bitstream.SimpleBitInputStream;
+import com.dimotim.bitstream.SimpleBitOutputStream;
 
 import java.io.*;
 import java.util.Arrays;
@@ -25,7 +26,7 @@ public class StaticHuffmanAlgorithm {
     }
     public static void encode(InputStream in, OutputStream codeStd) throws Exception {
         if(in.available()==0)return;
-        in=new ByteArrayInputStream(in.readAllBytes());
+        in=new ByteArrayInputStream((InputStreamReadAllBytes.readAllBytes(in)));
 
         int[] stat=getStat(in);
         writeStat(new DataOutputStream(codeStd),stat);

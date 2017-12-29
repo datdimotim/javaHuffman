@@ -3,6 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/huffman.iml" filepath="$PROJECT_DIR$/huffman.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javaHuffman.iml" filepath="$PROJECT_DIR$/.idea/modules/javaHuffman.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javaHuffman_main.iml" filepath="$PROJECT_DIR$/.idea/modules/javaHuffman_main.iml" group="javaHuffman" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javaHuffman_test.iml" filepath="$PROJECT_DIR$/.idea/modules/javaHuffman_test.iml" group="javaHuffman" />
     </modules>
   </component>
 </project>

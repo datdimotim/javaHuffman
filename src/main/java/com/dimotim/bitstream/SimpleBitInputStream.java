@@ -1,4 +1,4 @@
-package stream;
+package com.dimotim.bitstream;
 
 import com.dimotim.huffman.BitInputStream;
 import com.dimotim.huffman.Constants;
